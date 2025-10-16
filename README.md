@@ -4,7 +4,7 @@ Documentação completa sobre como fazer parsing de dados de livros da Amazon.co
 
 ## 🎯 Objetivo
 
-Extrair informações de livros da página de produto da Amazon (`https://www.amazon.com.br/dp/{ISBN_OR_ASIN}`) incluindo:
+Extrair informações de livros da página de produto da Amazon (`https://www.amazon.com.br/dp/{ISBN10_OR_ASIN}`) incluindo:
 
 - Título
 - Autores
@@ -20,13 +20,45 @@ Extrair informações de livros da página de produto da Amazon (`https://www.am
 
 ## 🔧 Requisitos
 
-### CORS Proxy
+### ⚠️ Importante: Backend vs Frontend
 
-A Amazon bloqueia requisições diretas via CORS. É necessário usar um proxy CORS como:
+**🎯 Recomendação**: Faça o parsing no **backend** sempre que possível.
+
+#### ✅ Backend (Recomendado)
+- Requisição HTTP direta à Amazon (sem proxy)
+- Mais estável e confiável
+- Sem limitações de CORS
+- Melhor controle de rate limiting
+- Mais rápido (sem latência de proxy)
+- **🔒 Mais seguro**: Evita injeção de payloads falsos no HTML
+- **🔒 Validação server-side**: Dados validados antes de chegar ao cliente
+
+**Exemplos**: Python, PHP, Node.js, Next.js API Routes
+
+#### ❌ Frontend/Client-side (Não Recomendado)
+- **Problema**: Navegador bloqueia por CORS
+- **Solução temporária**: Usar proxy CORS como `https://corsproxy.io/?{encodeURIComponent(amazonUrl)}`
+- **Limitações**:
+  - Proxy pode ficar instável ou offline
+  - Latência adicional
+  - Rate limiting mais agressivo
+  - Dependência de serviço terceiro
+  - **⚠️ Risco de segurança**: Proxy terceiro pode injetar código malicioso no HTML
+  - **⚠️ Sem validação**: Dados chegam direto ao navegador sem sanitização
+
+**Exemplos**: React puro (apenas para testes/protótipos)
+
+### Formato da URL Amazon
+
+⚠️ **Importante**: A Amazon aceita apenas **ISBN-10** ou **ASIN** na URL `/dp/`:
 
 ```
-https://corsproxy.io/?{encodeURIComponent(amazonUrl)}
+✅ Correto:   https://www.amazon.com.br/dp/8556512666  (ISBN-10)
+✅ Correto:   https://www.amazon.com.br/dp/B07XNZK4L5  (ASIN)
+❌ Incorreto: https://www.amazon.com.br/dp/978-8556512666  (ISBN-13)
 ```
+
+Se você tiver apenas ISBN-13, converta para ISBN-10 primeiro ou use o ASIN.
 
 ### HTML Structure
 
@@ -173,11 +205,14 @@ Veja exemplos de implementação em diferentes linguagens:
 
 ## ⚠️ Observações Importantes
 
-1. **CORS**: Sempre use um proxy CORS para requisições do navegador
-2. **Rate Limiting**: A Amazon pode bloquear requisições excessivas
-3. **Estrutura HTML**: A estrutura pode mudar sem aviso
-4. **Caracteres Unicode**: Cuidado com caracteres invisíveis (`\u200F`, `\u200E`)
-5. **Validação**: Sempre valide os dados extraídos antes de usar
+1. **🔒 Backend First**: Sempre prefira implementar no backend (Python, Node.js, PHP, etc) por segurança
+2. **🔒 Sanitização**: Sempre sanitize e valide dados extraídos antes de salvar ou exibir
+3. **URL Format**: Use apenas ISBN-10 ou ASIN na URL `/dp/` (não ISBN-13)
+4. **Rate Limiting**: A Amazon pode bloquear requisições excessivas
+5. **Estrutura HTML**: A estrutura pode mudar sem aviso
+6. **Caracteres Unicode**: Cuidado com caracteres invisíveis (`\u200F`, `\u200E`)
+7. **CORS (apenas frontend)**: Use proxy CORS apenas se realmente não puder usar backend
+8. **⚠️ Riscos do Proxy**: Proxies terceiros podem injetar código malicioso no HTML retornado
 
 ## 🔍 Debugging
 
